@@ -1,0 +1,9 @@
+{
+  "server_url": "http://127.0.0.1:8642",
+  "api_key": "VI7IxKay3liyWc76H7g43iFT8xWvg2MZD2S49-bp8uQ",
+  "default_model": "MiniMax-M3",
+  "provider": "minimax_cn",
+  "smart_routing": true,
+  "cheap_model": "MiniMax-M3",
+  "note": "Termux Hermes gateway defaults (local loopback only). Override via app Settings or place /sdcard/hermes_config.json to override."
+}

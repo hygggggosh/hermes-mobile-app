@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background circle -->
+    <path
+        android:fillColor="#2D2450"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+    <!-- H letterform -->
+    <path
+        android:fillColor="#B794F4"
+        android:pathData="M34,34h8v14h24v-14h8v40h-8v-18h-24v18h-8z" />
+    <!-- Neural dot -->
+    <path
+        android:fillColor="#FFB347"
+        android:pathData="M66,44m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+</vector>
