@@ -44,18 +44,22 @@ APK 还没编译，下一步三条路选一：
 
 ### 选项 A：推到 GitHub → Actions 云端构建
 
+仓库：`https://github.com/hygggggosh/hermes-mobile-app`（已建好，已 push 首次 commit）
+
+CI workflow：`.github/workflows/android.yml`（Gradle + JDK 17 Temurin）
+阿里云镜像：`.gradle/init.d/00-mirrors.gradle.kts`（避 mavenCentral 在 CI 上的龟速）
+
+构建步骤：
 ```bash
+# 改完代码后
 cd ~/hermes-mobile-local
-gh auth login   # 一次性
-# 用户仓库：hygggggosh/- → 新建一个 e.g. hermes-mobile-app
-# 然后：
-git init && git add .
-git config user.email "hermes@local" && git config user.name "Hermes"
-git commit -m "Initial fork from onezion12344/hermes-mobile, retargeted to Hermes gateway"
-# 在 Actions workflow 里要加 gradle actions：android-actions/setup-android@v3 + ./gradlew assembleDebug
+git add . && git commit -m "<message>"
+git push origin master
+# 打开 https://github.com/hygggggosh/hermes-mobile-app/actions 看构建日志
+# 构建成功后 Artifacts → HermesMobile-debug 下载 APK
 ```
 
-需要我加 workflow 文件就告诉我。
+如果 workflow 报 plugin 找不到，确认下 `.gradle/init.d/00-mirrors.gradle.kts` 在 commit 里。
 
 ### 选项 B：本地 Gradle 构建（要 Java 17 + Android SDK）
 
