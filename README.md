@@ -44,10 +44,23 @@ APK 还没编译，下一步三条路选一：
 
 ### 选项 A：推到 GitHub → Actions 云端构建
 
-仓库：`https://github.com/hygggggosh/hermes-mobile-app`（已建好，已 push 首次 commit）
+仓库：`https://github.com/hygggggosh/hermes-mobile-app`
+
+最新构建（已成功）：commit `119701b`，APK 18MB
+
+**下载 APK**：
+- GitHub 网页 → Actions → 选最新成功的 run → 底部 Artifacts → `HermesMobile-debug`
+- 直接下载链接：https://github.com/hygggggosh/hermes-mobile-app/actions（筛选 workflow "Build Android APK"）
+- 也可以 Termux 内：`gh run download --repo hygggggosh/hermes-mobile-app -n HermesMobile-debug`
 
 CI workflow：`.github/workflows/android.yml`（Gradle + JDK 17 Temurin）
 阿里云镜像：`.gradle/init.d/00-mirrors.gradle.kts`（避 mavenCentral 在 CI 上的龟速）
+首次构建时长：~3 分 23 秒（compileSdk=35 + Compose BOM）
+
+安装到手机：APK 是 debug 版，未签名 v2/v3。装到真机需要：
+1. **最简单**：手机开 USB 调试，电脑 `adb install app-debug.apk`
+2. **或**：把 APK 推到手机（微信文件/网盘都行），手机开"未知来源"，点开安装（Android 8+ 会警告）
+3. **或**：用 Termux 启动一个简单 HTTP server，手机浏览器下载：`cd ~/Downloads/HermesMobile-debug && python3 -m http.server 8080`，手机访问 `http://<termux-ip>:8080`
 
 构建步骤：
 ```bash
@@ -59,7 +72,7 @@ git push origin master
 # 构建成功后 Artifacts → HermesMobile-debug 下载 APK
 ```
 
-如果 workflow 报 plugin 找不到，确认下 `.gradle/init.d/00-mirrors.gradle.kts` 在 commit 里。
+如果 workflow 报 plugin 找不到，确认下 `.gradle/init.d/00-mirrors.gradle.kts` 在 commit 里（它容易被 `.gitignore` 的 `.gradle/` 误吞）。
 
 ### 选项 B：本地 Gradle 构建（要 Java 17 + Android SDK）
 
