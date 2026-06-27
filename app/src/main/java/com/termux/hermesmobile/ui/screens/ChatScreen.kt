@@ -83,8 +83,7 @@ fun ChatScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
                         modifier = Modifier.semantics { contentDescription = "Hermes chat header" }
                     ) {
                         Text(
@@ -92,23 +91,11 @@ fun ChatScreen(
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.semantics { contentDescription = "Hermes" }
                         )
-                        if (!isLoading && messages.isEmpty()) {
-                            Spacer(Modifier.width(8.dp))
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.semantics {
-                                    contentDescription = "Disconnected status"
-                                }
-                            ) {
-                                Text(
-                                    " disconnected ",
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
+                        ConnectionSubtitle(
+                            serverUrl = serverUrl,
+                            isLoading = isLoading,
+                            hasMessages = messages.isNotEmpty()
+                        )
                     }
                 },
                 actions = {
@@ -395,5 +382,54 @@ private fun InputBar(
                 )
             }
         }
+    }
+}
+
+/**
+ * Compact subtitle row under "Hermes" in the chat TopAppBar.
+ *
+ * Always shows the active server URL so the user has a visible confirmation of
+ * which gateway the app is talking to, plus a coloured dot reflecting the
+ * current connection state.
+ *
+ * @param serverUrl The configured Hermes gateway URL (e.g. http://127.0.0.1:8642)
+ * @param isLoading Whether a chat completion is currently streaming
+ * @param hasMessages Whether the user has any messages in this conversation
+ */
+@Composable
+private fun ConnectionSubtitle(
+    serverUrl: String,
+    isLoading: Boolean,
+    hasMessages: Boolean
+) {
+    val (dotColor, statusLabel) = when {
+        serverUrl.isBlank() || serverUrl == "http://127.0.0.1:11434" ->
+            HermesError to "Not configured"
+        isLoading -> HermesSecondary to "Streaming"
+        hasMessages -> HermesSecondary to "Connected"
+        else -> HermesSecondary to "Ready"
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 2.dp)
+    ) {
+        // Coloured dot
+        Surface(
+            shape = CircleShape,
+            color = dotColor,
+            modifier = Modifier
+                .size(8.dp)
+                .semantics { contentDescription = "$statusLabel status" }
+        ) {}
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = "$statusLabel · $serverUrl",
+            style = MaterialTheme.typography.bodySmall,
+            color = HermesOnSurface.copy(alpha = 0.7f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.semantics { contentDescription = "$statusLabel to $serverUrl" }
+        )
     }
 }

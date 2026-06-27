@@ -39,18 +39,29 @@ fun SetupWizard(
 ) {
     val context = LocalContext.current
     val settingsRepo = remember { SettingsRepository(context) }
-    val scope = rememberCoroutineScope()
 
     // Detect config on launch — run once, not on every recomposition
     var detectedConfig by remember { mutableStateOf<Pair<HermesConfig, ConfigSource>?>(null) }
     var isDetecting by remember { mutableStateOf(true) }
-    var isSaving by remember { mutableStateOf(false) }
+    var isApplying by remember { mutableStateOf(false) }
+    var isApplied by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             detectedConfig = importHermesConfig(context)
         }
         isDetecting = false
+    }
+
+    // Auto-apply detected config so user doesn't have to tap a button for the default case.
+    // Manual Setup remains available for users who want to override before connecting.
+    LaunchedEffect(detectedConfig) {
+        val config = detectedConfig?.first ?: return@LaunchedEffect
+        if (isApplied || isApplying) return@LaunchedEffect
+        isApplying = true
+        applyHermesConfig(settingsRepo, config)
+        isApplied = true
+        isApplying = false
     }
 
     Scaffold(
@@ -103,36 +114,35 @@ fun SetupWizard(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Config detection status card
+// Config detection status card
             ConfigDetectionCard(
                 detectedConfig = detectedConfig,
                 isDetecting = isDetecting,
+                isApplying = isApplying,
+                isApplied = isApplied,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(Modifier.height(32.dp))
 
-            // Connect button — enabled when we have a config
-            val hasConfig = detectedConfig != null
-            val connectDescription = if (hasConfig) "Connect to Hermes with detected settings" else "No config detected"
+            // Continue button — enabled once config has been auto-applied.
+            // We keep a manual path here too, so users who arrive at this screen
+            // with no config can still bail out to settings instead of being stuck.
+            val canContinue = detectedConfig != null && isApplied && !isApplying
+            val continueDescription = when {
+                isDetecting -> "Detecting configuration"
+                isApplying -> "Applying configuration"
+                isApplied -> "Continue to chat"
+                else -> "No configuration detected"
+            }
 
             Button(
-                onClick = {
-                    if (isSaving || isDetecting) return@Button
-                    detectedConfig?.let { (config, _) ->
-                        isSaving = true
-                        scope.launch {
-                            applyHermesConfig(settingsRepo, config)
-                            isSaving = false
-                            onComplete()
-                        }
-                    }
-                },
-                enabled = hasConfig && !isDetecting && !isSaving,
+                onClick = { onComplete() },
+                enabled = canContinue,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
-                    .semantics { contentDescription = connectDescription },
+                    .semantics { contentDescription = continueDescription },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = HermesPrimary,
                     disabledContainerColor = HermesPrimary.copy(alpha = 0.4f)
@@ -140,14 +150,7 @@ fun SetupWizard(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 when {
-                    isDetecting -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = HermesSurface,
-                            strokeWidth = 2.dp
-                        )
-                    }
-                    isSaving -> {
+                    isDetecting || isApplying -> {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             color = HermesSurface,
@@ -156,7 +159,7 @@ fun SetupWizard(
                     }
                     else -> {
                         Text(
-                            "Connect",
+                            "Continue",
                             style = MaterialTheme.typography.titleMedium,
                             color = HermesSurface
                         )
@@ -202,6 +205,8 @@ fun SetupWizard(
 private fun ConfigDetectionCard(
     detectedConfig: Pair<HermesConfig, ConfigSource>?,
     isDetecting: Boolean,
+    isApplying: Boolean,
+    isApplied: Boolean,
     modifier: Modifier = Modifier
 ) {
     val (config, source) = detectedConfig ?: Pair(null, null)
@@ -214,6 +219,34 @@ private fun ConfigDetectionCard(
             "Scanning device and bundled files",
             HermesSurface
         )
+        hasConfig && isApplying -> {
+            val srcLabel = when (source) {
+                is ConfigSource.Assets -> "Bundled defaults"
+                is ConfigSource.DeviceFile -> "Device file: ${source.path}"
+                ConfigSource.None -> null
+                null -> null
+            }
+            listOf(
+                Icons.Default.CheckCircle,
+                "Applying configuration...",
+                "Server: ${config.server_url}${srcLabel?.let { " · $it" } ?: ""}",
+                HermesSurface
+            )
+        }
+        hasConfig && isApplied -> {
+            val srcLabel = when (source) {
+                is ConfigSource.Assets -> "Bundled defaults"
+                is ConfigSource.DeviceFile -> "Device file: ${source.path}"
+                ConfigSource.None -> null
+                null -> null
+            }
+            listOf(
+                Icons.Default.CheckCircle,
+                "Configuration applied ✓",
+                "Server: ${config.server_url} · Model: ${config.default_model} · ${srcLabel ?: ""}",
+                HermesPrimaryContainer
+            )
+        }
         hasConfig -> {
             val srcLabel = when (source) {
                 is ConfigSource.Assets -> "Bundled defaults"
