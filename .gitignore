@@ -16,4 +16,6 @@ local.properties
 .cxx/
 *.keystore
 !gradle/wrapper/gradle-wrapper.jar
+# Whitelist our CI mirror init script (otherwise .gradle/ is ignored above)
+/.gradle/init.d/*.gradle.kts
 /app/release/
